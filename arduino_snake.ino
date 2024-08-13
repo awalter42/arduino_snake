@@ -3,8 +3,8 @@
 
 #define BUTTON_N 4
 #define BUTTON_S 7
-#define BUTTON_E 8
-#define BUTTON_W 2
+#define BUTTON_E 2
+#define BUTTON_W 8
 
 
 #define NUM_LEDS 256
@@ -35,11 +35,11 @@ int matrix[16][16][2] = {
 
 int head[2] = {6, 10};
 int score = 0;
-Deque<int> snake(90);
+Deque<int> snake;
 
 void error(void)
 {
-  strip.setPixelColor(0, strip.Color(255, 0, 0));
+  strip.setPixelColor(0, strip.Color(55, 0, 0));
   strip.show();
   delay(1000);
   exit(1);
@@ -53,6 +53,7 @@ void change_led_state(int x, int y, int R, int G, int B)
     error();
   }
   strip.setPixelColor(matrix[y][x][0], strip.Color(R, G, B));
+//  strip.show();
   matrix[y][x][1] = R;
 }
 
@@ -87,7 +88,7 @@ void check_led(int x, int y)
 
   if (red_val == 11)
   {
-    strip.setPixelColor(15, strip.Color(255, 0, 0));
+    strip.setPixelColor(15, strip.Color(55, 0, 0));
     strip.show();
     delay(1000);
     exit(1);
@@ -97,25 +98,32 @@ void check_led(int x, int y)
     score++;
     make_new_fruit();
   }
-  else if (red_val == 0)
+  else
   {
-    strip.setPixelColor(snake.back(), strip.Color(0, 0, 0));
-    snake.pop_back();
+    int back = snake.pop_back();
+    int temp_y = (int)(back / 16);
+    int temp_x;
+    if (temp_y % 2 == 0)
+      temp_x = 15 - (back % 16);
+    else
+      temp_x = back % 16;
+    change_led_state(temp_x, temp_y, 0, 0, 0);
   }
   change_led_state(x, y, 11, 11, 11);
   strip.show();
+  snake.push_front(matrix[y][x][0]);
 }
 
 
 char read_pins(char prev)
 {
-  if (digitalRead(BUTTON_E) == HIGH)
+  if (prev != 'W' && digitalRead(BUTTON_E) == HIGH)
     return 'E';
-  if (digitalRead(BUTTON_W) == HIGH)
+  if (prev != 'E' && digitalRead(BUTTON_W) == HIGH)
     return 'W';
-  if (digitalRead(BUTTON_N) == HIGH)
+  if (prev != 'S' && digitalRead(BUTTON_N) == HIGH)
     return 'N';
-  if (digitalRead(BUTTON_S) == HIGH)
+  if (prev != 'N' && digitalRead(BUTTON_S) == HIGH)
     return 'S';
   else
     return prev;
@@ -157,6 +165,7 @@ void setup() {
   strip.begin();
   strip.setPixelColor(169, strip.Color(11, 11, 11));
   strip.show();
+  make_new_fruit();
   pinMode(BUTTON_E, INPUT);
   pinMode(BUTTON_W, INPUT);
   pinMode(BUTTON_N, INPUT);
@@ -164,6 +173,13 @@ void setup() {
 }
 
 void loop() {
+  if (score >= 69)
+  {
+    strip.setPixelColor(240, strip.Color(0, 0, 55));
+    strip.show();
+    exit(0);
+  }
   move();
-  delay(200);
+  strip.show();
+  delay(300);
 }
